@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-Commerce Sales Analytics Dashboard - Danyal Rahujo</title>
+  <meta name="description" content="End-to-end data analytics project with ETL pipeline, RFM segmentation, and interactive Streamlit dashboard analyzing 50,000+ e-commerce transactions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0c0c0b;
+      --bg2:       #111110;
+      --bg3:       #161614;
+      --surface:   #1a1a18;
+      --border:    rgba(255,255,255,0.08);
+      --border2:   rgba(255,255,255,0.14);
+      --white:     #f4f3ef;
+      --off:       #d4d2cc;
+      --muted:     #6b6966;
+      --accent:    #c8ff57;
+      --accent2:   #ff5733;
+      --blue:      #4a9eff;
+      --green:     #4ade80;
+      --radius:    14px;
+      --radius-sm: 8px;
+      --nav-h:     64px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; }
+    em { font-style: normal; color: var(--accent); }
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
+    
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--nav-h); z-index: 500;
+      background: rgba(12,12,11,0.95);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1080px; margin: 0 auto; padding: 0 32px;
+      height: 100%; display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px;
+      color: var(--white); letter-spacing: -0.02em;
+    }
+    .logo-dot { color: var(--accent); }
+    .nav-links { display: flex; list-style: none; gap: 20px; }
+    .nav-links a {
+      font-size: 13px; font-weight: 400; color: var(--muted);
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+
+    main { padding-top: var(--nav-h); }
+    section { padding: 80px 0; }
+    
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--accent); font-size: 13px; font-weight: 600;
+      margin-bottom: 40px; transition: gap 0.2s;
+    }
+    .back-btn:hover { gap: 10px; }
+
+    .page-header {
+      margin-bottom: 60px;
+    }
+    .page-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(40px, 6vw, 56px);
+      font-weight: 800; line-height: 1.1; letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+    .page-subtitle {
+      font-size: 18px; color: var(--off); font-weight: 300; line-height: 1.65; max-width: 700px;
+    }
+
+    .project-meta {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      margin-bottom: 60px;
+    }
+    .meta-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 18px;
+    }
+    .meta-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .meta-value { font-size: 16px; font-weight: 600; color: var(--white); }
+
+    .btn-group {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 60px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+      border: none; cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--accent); color: var(--bg);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(200,255,87,0.25); }
+    .btn-secondary {
+      background: var(--surface); border: 1px solid var(--border2); color: var(--white);
+    }
+    .btn-secondary:hover { border-color: var(--white); background: rgba(255,255,255,0.05); }
+
+    .section-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 32px;
+      margin-bottom: 24px;
+    }
+    .section-card h3 {
+      font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700;
+      color: var(--white); margin-bottom: 16px;
+    }
+    .section-card p {
+      font-size: 15px; color: var(--off); line-height: 1.8; margin-bottom: 12px;
+    }
+    .section-card p:last-child { margin-bottom: 0; }
+
+    .insights-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+      margin-bottom: 20px;
+    }
+    .insight-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 20px;
+      border-left: 3px solid var(--accent);
+    }
+    .insight-card h4 {
+      font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 8px;
+    }
+    .insight-card p {
+      font-size: 13px; color: var(--muted); line-height: 1.6;
+    }
+
+    .features-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+      margin-bottom: 20px;
+    }
+    .feature-item {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 16px;
+      display: flex; gap: 12px;
+    }
+    .feature-icon {
+      font-size: 24px; flex-shrink: 0;
+    }
+    .feature-text h4 {
+      font-size: 14px; font-weight: 600; color: var(--white); margin-bottom: 4px;
+    }
+    .feature-text p {
+      font-size: 12px; color: var(--muted);
+    }
+
+    .tech-list {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 20px;
+    }
+    .tech-tag {
+      display: inline-flex;
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--off); padding: 6px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 500;
+    }
+
+    .impact-table {
+      width: 100%; border-collapse: collapse;
+      background: var(--surface);
+      margin-bottom: 20px;
+    }
+    .impact-table th {
+      background: var(--bg3); padding: 16px;
+      text-align: left; font-weight: 700; font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+    .impact-table td {
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .impact-table tr:last-child td {
+      border-bottom: none;
+    }
+    .impact-value {
+      color: var(--accent); font-weight: 700;
+    }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 40px 0;
+      text-align: center; color: var(--muted); font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+      .project-meta { grid-template-columns: repeat(2, 1fr); }
+      .insights-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .container { padding: 0 20px; }
+      section { padding: 60px 0; }
+      .page-title { font-size: 32px; }
+      .nav-links { display: none; }
+      .project-meta { grid-template-columns: 1fr; }
+      .btn-group { flex-direction: column; }
+      .btn { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">DR<span class="logo-dot">.</span></a>
+      <ul class="nav-links">
+        <li><a href="../index.html#projects">Projects</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <section>
+      <div class="container">
+        <a href="../index.html#projects" class="back-btn">← Back to Projects</a>
+
+        <div class="page-header">
+          <h1 class="page-title">📊 E-Commerce Sales<br><em>Analytics Dashboard</em></h1>
+          <p class="page-subtitle">
+            End-to-end data analytics project featuring ETL pipeline, RFM customer segmentation, 
+            statistical analysis, and interactive Streamlit dashboard. Analyzed 50,000+ transactions 
+            to identify $1.2M+ in revenue opportunities.
+          </p>
+        </div>
+
+        <div class="project-meta">
+          <div class="meta-card">
+            <div class="meta-label">Status</div>
+            <div class="meta-value">Completed ✓</div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">Transactions</div>
+            <div class="meta-value">50,000+</div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">Customers</div>
+            <div class="meta-value">5,000</div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">ROI Identified</div>
+            <div class="meta-value">$1.2M+</div>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <a href="https://github.com/danyalrahujoi/ecommerce-sales-analytics" class="btn btn-primary" target="_blank">
+            💻 View on GitHub
+          </a>
+          <a href="https://ecommerce-analytics-dashboard.streamlit.app/" class="btn btn-primary" target="_blank" style="background: #6f42c1;">
+            📊 Live Dashboard
+          </a>
+          <a href="https://github.com/danyalrahujoi/ecommerce-sales-analytics#readme" class="btn btn-secondary" target="_blank">
+            📖 Documentation
+          </a>
+        </div>
+
+        <div class="section-card">
+          <h3>🎯 Project Overview</h3>
+          <p>
+            This project demonstrates a complete end-to-end analytics workflow: from raw data generation through 
+            exploratory data analysis, statistical modeling, business intelligence visualization, and actionable insights delivery.
+          </p>
+          <p>
+            Built to showcase core competencies in data engineering, analytics, Python programming, and business communication 
+            — the exact skills required for Data Analyst, Data Engineer, and Business Intelligence roles.
+          </p>
+        </div>
+
+        <div class="section-card">
+          <h3>🛠️ Technology Stack</h3>
+          <div class="tech-list">
+            <span class="tech-tag">Python</span>
+            <span class="tech-tag">Pandas</span>
+            <span class="tech-tag">NumPy</span>
+            <span class="tech-tag">Scikit-learn</span>
+            <span class="tech-tag">Plotly</span>
+            <span class="tech-tag">Streamlit</span>
+            <span class="tech-tag">Matplotlib</span>
+            <span class="tech-tag">Jupyter</span>
+            <span class="tech-tag">SQL/SQLite</span>
+            <span class="tech-tag">Git/GitHub</span>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3>✨ Key Features</h3>
+          <div class="features-grid">
+            <div class="feature-item">
+              <div class="feature-icon">🔄</div>
+              <div class="feature-text">
+                <h4>ETL Pipeline</h4>
+                <p>Automated data cleaning, validation, transformation</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">👥</div>
+              <div class="feature-text">
+                <h4>RFM Segmentation</h4>
+                <p>Customer categorization into 4 strategic segments</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">💰</div>
+              <div class="feature-text">
+                <h4>CLV Analysis</h4>
+                <p>High-value customer identification & ranking</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">📈</div>
+              <div class="feature-text">
+                <h4>Statistical Testing</h4>
+                <p>Hypothesis testing, cohort analysis, trend detection</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">🗺️</div>
+              <div class="feature-text">
+                <h4>Geographic Analysis</h4>
+                <p>Regional performance comparison & opportunities</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">📊</div>
+              <div class="feature-text">
+                <h4>Interactive Dashboard</h4>
+                <p>Real-time KPIs, filters, charts with Streamlit</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3>💡 Key Business Insights</h3>
+          <div class="insights-grid">
+            <div class="insight-card">
+              <h4>💰 Revenue Concentration</h4>
+              <p>20% of customers drive 80% of revenue. Champions have 8x higher CLV than average.</p>
+            </div>
+            <div class="insight-card">
+              <h4>📍 Geographic Gap</h4>
+              <p>Central region has 3x growth opportunity (5% → 15% conversion potential).</p>
+            </div>
+            <div class="insight-card">
+              <h4>📅 Seasonal Peak</h4>
+              <p>40% of annual revenue in Q4. Critical planning window: August-September.</p>
+            </div>
+            <div class="insight-card">
+              <h4>👥 Retention Crisis</h4>
+              <p>45% of customers inactive. Month 3-6 is critical churn point.</p>
+            </div>
+            <div class="insight-card">
+              <h4>📦 Category Margin</h4>
+              <p>Electronics & Fashion: 15-16% margins vs 10% for Books & Toys.</p>
+            </div>
+            <div class="insight-card">
+              <h4>💼 Strategic Oppty</h4>
+              <p>Bundling high + low margin products increases AOV by 22%.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3>🚀 Quantified Business Impact</h3>
+          <table class="impact-table">
+            <thead>
+              <tr>
+                <th>Initiative</th>
+                <th>Annual Impact</th>
+                <th>Implementation</th>
+                <th>Timeline</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Customer Retention</strong></td>
+                <td class="impact-value">+$750K</td>
+                <td>20% retention improvement</td>
+                <td>Months 1-3</td>
+              </tr>
+              <tr>
+                <td><strong>Regional Expansion</strong></td>
+                <td class="impact-value">+$280K</td>
+                <td>Central region growth strategy</td>
+                <td>Months 2-6</td>
+              </tr>
+              <tr>
+                <td><strong>Personalization</strong></td>
+                <td class="impact-value">+$300K</td>
+                <td>Recommendation engine</td>
+                <td>Months 1-2</td>
+              </tr>
+              <tr>
+                <td><strong>Category Optimization</strong></td>
+                <td class="impact-value">+$180K</td>
+                <td>High-margin promotion</td>
+                <td>Month 1</td>
+              </tr>
+              <tr style="background: rgba(200,255,87,0.1);">
+                <td><strong>Total Opportunity</strong></td>
+                <td class="impact-value" style="font-size: 16px;">+$1.51M</td>
+                <td><strong>25% revenue increase</strong></td>
+                <td>6 months</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section-card">
+          <h3>🎓 Skills Demonstrated</h3>
+          <ul style="list-style: none; padding: 0;">
+            <li style="padding: 8px 0; font-size: 14px; color: var(--off);">
+              <span style="color: var(--accent); font-weight: 600;">✓ Data Engineering</span> — ETL design, data cleaning, transformation, feature engineering
+            </li>
+            <li style="padding: 8px 0; font-size: 14px; color: var(--off);">
+              <span style="color: var(--accent); font-weight: 600;">✓ Data Analysis</span> — Statistical analysis, hypothesis testing, segmentation, cohort analysis
+            </li>
+            <li style="padding: 8px 0; font-size: 14px; color: var(--off);">
+              <span style="color: var(--accent); font-weight: 600;">✓ Business Intelligence</span> — KPI tracking, dashboard design, insight generation, storytelling
+            </li>
+            <li style="padding: 8px 0; font-size: 14px; color: var(--off);">
+              <span style="color: var(--accent); font-weight: 600;">✓ Data Visualization</span> — Interactive dashboards, Plotly, data communication
+            </li>
+            <li style="padding: 8px 0; font-size: 14px; color: var(--off);">
+              <span style="color: var(--accent); font-weight: 600;">✓ Python Programming</span> — OOP code, modular design, documentation, best practices
+            </li>
+            <li style="padding: 8px 0; font-size: 14px; color: var(--off);">
+              <span style="color: var(--accent); font-weight: 600;">✓ Communication</span> — Professional documentation, clear findings presentation, ROI calculation
+            </li>
+            <li style="padding: 8px 0; font-size: 14px; color: var(--off);">
+              <span style="color: var(--accent); font-weight: 600;">✓ Version Control</span> — Git, GitHub, professional repository management
+            </li>
+          </ul>
+        </div>
+
+        <div class="section-card">
+          <h3>🚀 How to Run Locally</h3>
+          <pre style="background: var(--bg3); padding: 16px; border-radius: var(--radius-sm); overflow-x: auto; font-size: 12px; color: var(--accent); line-height: 1.6; border: 1px solid var(--border);">git clone https://github.com/danyalrahujoi/ecommerce-sales-analytics.git
+cd ecommerce-sales-analytics
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Generate data
+python src/data_generator.py
+python src/data_processor.py
+
+# Launch dashboard
+streamlit run visualizations/dashboards/main_dashboard.py
+
+# Visit: http://localhost:8501</pre>
+        </div>
+
+        <div class="section-card" style="background: linear-gradient(135deg, rgba(74,158,255,0.1), rgba(111,66,193,0.1)); border-color: rgba(200,255,87,0.2);">
+          <h3>🎯 View the Complete Project</h3>
+          <p>All code, documentation, and analysis files are available on GitHub. Explore the Jupyter notebooks, review the Python modules, and deploy the dashboard yourself.</p>
+          <div class="btn-group" style="margin-top: 24px;">
+            <a href="https://github.com/danyalrahujoi/ecommerce-sales-analytics" class="btn btn-primary" target="_blank">
+              Open on GitHub →
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>© 2025 Danyal Rahujo · <a href="mailto:danyalrahujo@gmail.com" style="color: var(--accent);">Get in touch</a></p>
+    </div>
+  </footer>
+
+</body>
+</html>
